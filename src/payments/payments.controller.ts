@@ -29,7 +29,6 @@ export class PaymentsController {
   }
 
   @Post('webhook')
-  // @HttpCode(201)
   async stripeWebhook(@Req() req: Request, @Res() res: Response) {
     return await this.paymentsService.stripeWebhook(req, res);
   }
