@@ -1,12 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import Stripe from 'stripe';
-import { envs } from '../config';
+import { envs, NATS_SERVICE } from '../config';
 import { PaymentSessionDto } from './dto/payment-dto';
 import { Request, Response } from 'express';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class PaymentsService {
   private readonly stripe = new Stripe(envs.stripeSecret);
+
+  constructor(@Inject(NATS_SERVICE) private readonly client: ClientProxy) { }
 
   //Al crear la sesión, estaré mandando a Stripe información sobre lo que yo quiero cobrar. Stripe retornará una URL la cual usaremos para redirigir al usuario para que pueda pagar.
   //En la metadata voy a mandar la información que a mí me sirva para identificar el cliente que está pagando, cuál orden es, etc. Es decir, le pasaría id's de mi base de datos actual.
@@ -34,10 +37,15 @@ export class PaymentsService {
       },
       line_items: lineItems,
       mode: 'payment',
-      success_url: envs.successUrl, //En realidad podriamos redireccionarlo a un sitio web que muestre el mesnaje respectivo
+      success_url: envs.successUrl, //En realidad podriamos redireccionarlo a un sitio web que muestre el mensaje respectivo
       cancel_url: envs.cancelUrl,
     });
-    return session;
+
+    return {
+      cancelUrl: session.cancel_url,
+      successUrl: session.success_url,
+      url: session.url,
+    };
   }
 
   async stripeWebhook(req: Request, res: Response) {
@@ -65,7 +73,8 @@ export class PaymentsService {
           receiptUrl: chargeSucceeded.receipt_url,
         };
 
-        console.log({ payload });
+        //Emit the event to Orders microservice through NATS server
+        this.client.emit('payment.succeeded', payload);
         break;
 
       default:
