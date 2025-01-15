@@ -8,7 +8,7 @@ async function bootstrap() {
   const logger = new Logger('PaymentsMS-main');
 
   const app = await NestFactory.create(AppModule, {
-    rawBody: true,
+    rawBody: true, // This is required to access the raw body of the request, only necesary for the /webhook endpoint
   });
 
   app.useGlobalPipes(
@@ -26,7 +26,7 @@ async function bootstrap() {
       },
     },
     {
-      inheritAppConfig: true,
+      inheritAppConfig: true,  // This is required to use class-validator in the microservice
     },
   );
 
