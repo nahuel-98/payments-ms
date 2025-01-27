@@ -11,8 +11,6 @@ export class PaymentsService {
 
   constructor(@Inject(NATS_SERVICE) private readonly client: ClientProxy) { }
 
-  //Al crear la sesión, estaré mandando a Stripe información sobre lo que yo quiero cobrar. Stripe retornará una URL la cual usaremos para redirigir al usuario para que pueda pagar.
-  //En la metadata voy a mandar la información que a mí me sirva para identificar el cliente que está pagando, cuál orden es, etc. Es decir, le pasaría id's de mi base de datos actual.
   async createPaymentSession(paymentSessionDto: PaymentSessionDto) {
     const { currency, items, orderId } = paymentSessionDto;
 
@@ -37,7 +35,7 @@ export class PaymentsService {
       },
       line_items: lineItems,
       mode: 'payment',
-      success_url: envs.successUrl, //En realidad podriamos redireccionarlo a un sitio web que muestre el mensaje respectivo
+      success_url: envs.successUrl,
       cancel_url: envs.cancelUrl,
     });
 
